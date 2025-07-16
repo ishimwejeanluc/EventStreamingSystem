@@ -1,5 +1,7 @@
 <?php
 
+namespace Utils\Enums;
+
 enum VideoStatus: string
 {
     case DRAFT = 'draft';

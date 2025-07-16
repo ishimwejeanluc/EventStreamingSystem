@@ -2,18 +2,29 @@
 // AuthRoutes.php
 // This file defines the routes (URLs) for authentication actions like register and login.
 
-require_once __DIR__ . '/../controllers/AuthController.php';
+namespace Routes;
 
-$authController = new AuthController();
+use Controllers\AuthController;
 
-// Route for user registration
-$router->post('/api/Auth/register', function($request) use ($authController) {
-    // Call the register method in AuthController
-    return $authController->register($request->getBody());
-});
+class AuthRoutes
+{
+    public static function handle($method, $path, $input)
+    {
+        $authController = new AuthController();
 
-// Route for user login
-$router->post('/api/Auth/login', function($request) use ($authController) {
-    // Call the login method in AuthController
-    return $authController->login($request->getBody());
-});
+        if ($method === 'POST' && $path === '/api/Auth/register') {
+            $result = $authController->register($input ?? []);
+            echo json_encode($result);
+            exit;
+        }
+        if ($method === 'POST' && $path === '/api/Auth/login') {
+            $result = $authController->login($input ?? []);
+            echo json_encode($result);
+            exit;
+        }
+
+        // If no route matched
+        http_response_code(404);
+        echo json_encode(['status' => 'error', 'message' => 'Not found']);
+    }
+}

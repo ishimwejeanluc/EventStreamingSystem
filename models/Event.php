@@ -1,5 +1,11 @@
 <?php
-require_once __DIR__ . '/../utils/enums/EventStatus.php';
+// Event.php
+// This file defines the Event model, representing an event in the system.
+
+namespace Models;
+
+use DateTime;
+use Utils\Enums\EventStatus;
 
 class Event {
     private string $id;

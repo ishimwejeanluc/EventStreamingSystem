@@ -1,5 +1,7 @@
 <?php
 
+namespace Utils\Enums;
+
 enum UserRole: string
 {
     case ADMIN = 'admin';

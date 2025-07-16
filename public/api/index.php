@@ -1,17 +1,27 @@
 <?php
+// Load Composer's autoloader
 require_once __DIR__ . '/../../vendor/autoload.php';
-// Main API entry point
-header('Content-Type: application/json');
 
-$path = $_SERVER['REQUEST_URI'];
+// Load environment variables
+$projectRoot = dirname(__DIR__, 2);
+$dotenv = Dotenv\Dotenv::createImmutable($projectRoot);
+$dotenv->load();
 
-// Route to Auth
+// Gather request info
+$method = $_SERVER['REQUEST_METHOD'];
+$path = strtok($_SERVER['REQUEST_URI'], '?');
+$input = json_decode(file_get_contents('php://input'), true);
+
 if (strpos($path, '/api/Auth/') === 0) {
-    require_once __DIR__ . '/../../routes/AuthRoutes.php';
+    Routes\AuthRoutes::handle($method, $path, $input);
     exit;
 }
+if (strpos($path, '/api/User/') === 0) {
+    Routes\UserRoutes::handle($method, $path, $input);
+    exit;
+}
+// ... and so on for other route groups
 
-// Add more routes for other controllers here
-
+// If no route matched
 http_response_code(404);
 echo json_encode(['status' => 'error', 'message' => 'Not found']);

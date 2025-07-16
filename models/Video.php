@@ -1,5 +1,10 @@
 <?php
-require_once __DIR__ . '/../utils/enums/VideoStatus.php';
+// Video.php
+// This file defines the Video model, representing a video in the system.
+
+namespace Models;
+
+use Utils\Enums\VideoStatus;
 
 class Video {
     private string $id;

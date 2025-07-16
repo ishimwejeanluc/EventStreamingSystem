@@ -2,10 +2,12 @@
 // AuthService.php
 // This service handles authentication logic like registering and logging in users.
 
-require_once __DIR__ . '/../utils/Security.php';
-require_once __DIR__ . '/../models/User.php';
+namespace Services;
 
 use Ramsey\Uuid\Uuid;
+use Config\Database;
+use Models\User;
+use Utils\Security;
 
 class AuthService {
     // Database connection (shared for all AuthService instances)
@@ -16,7 +18,6 @@ class AuthService {
      */
     public function __construct() {
         if (self::$pdo === null) {
-            require_once __DIR__ . '/../config/Database.php';
             self::$pdo = Database::getConnection();
         }
     }
@@ -36,11 +37,11 @@ class AuthService {
 
         // Check if required fields are filled
         if (empty($username) || empty($email) || empty($password)) {
-            throw new Exception('Name, email and password are required fields.');
+            throw new \Exception('Name, email and password are required fields.');
         }
 
         // Hash the password for security
-        $passwordHash = Security::hashPassword($password);
+        $passwordHash = Utils\Security::hashPassword($password);
         // Generate a unique user ID
         $userId = Uuid::uuid4()->toString();
 
@@ -64,12 +65,12 @@ class AuthService {
                 $userObj->setId($userId);
                 return 'User saved';
             } else {
-                throw new Exception('User could not be saved.');
+                throw new \Exception('User could not be saved.');
             }
-        } catch (PDOException $e) {
+        } catch (\PDOException $e) {
             // Print and throw database errors
             echo "$e->getMessage()";
-            throw new Exception("Database error: " . $e->getMessage());
+            throw new \Exception("Database error: " . $e->getMessage());
         }
     }
 
@@ -91,21 +92,46 @@ class AuthService {
 
             // Check if a user with this email exists
             if ($stmt->rowCount() > 0) {
-                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                $user = $stmt->fetch(\PDO::FETCH_ASSOC);
                 $userpassword = $user['password_hash'];
 
                 // Verify the password
-                if (Security::verifyPassword($password, $userpassword)) {
-                    return 'Login successful';
+                if (\Utils\Security::verifyPassword($password, $userpassword)) {
+                    // Generate JWT token with user details
+                    $token = \Utils\Security::generateToken([
+                        'id' => $user['id'],
+                        'username' => $user['username'],
+                        'email' => $user['email'],
+                        'role' => $user['role'],
+                        'status' => $user['status'] ?? null
+                    ]);
+                    return [
+                        'status' => 'success',
+                        'message' => 'Login successful',
+                        'token' => $token
+                    ];
                 } else {
-                    throw new Exception('Invalid password.');
+                    return [
+                        'status' => 'error',
+                        'message' => 'Invalid password.'
+                    ];
                 }
             } else {
-                throw new Exception('User not found.');
+                return [
+                    'status' => 'error',
+                    'message' => 'User not found.'
+                ];
             }
-        } catch (PDOException $e) {
-            // Handle database errors
-            throw new Exception("Database error: " . $e->getMessage());
+        } catch (\PDOException $e) {
+            return [
+                'status' => 'error',
+                'message' => 'Database error: ' . $e->getMessage()
+            ];
+        } catch (\Exception $e) {
+            return [
+                'status' => 'error',
+                'message' => 'Server error: ' . $e->getMessage()
+            ];
         }
     }
 }

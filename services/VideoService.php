@@ -1,14 +1,18 @@
 <?php
 // services/VideoService.php
+// This service handles video-related operations
 
-require_once __DIR__ . '/../models/Video.php';
+namespace Services;
+
+use Models\Video;
+use Config\Database;
+use Utils\Enums\VideoStatus;
 
 class VideoService {
     private static $pdo = null;
 
     public function __construct() {
         if (self::$pdo === null) {
-            require_once __DIR__ . '/../config/Database.php';
             self::$pdo = Database::getConnection();
         }
     }
@@ -22,7 +26,7 @@ class VideoService {
         $duration = $video->getDuration();
         $eventId = $video->getEventId();
         $uploadedBy = $video->getUploadedBy();
-        $status = $video->getStatus()->value; // Use string value
+        $status = VideoStatus::getDefault(); // Use string value
         $createdBy = $video->getCreatedBy();
         $updatedBy = $video->getUpdatedBy();
         try {

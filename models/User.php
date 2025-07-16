@@ -2,8 +2,10 @@
 // User.php
 // This file defines the User model, representing a user in the system.
 
-require_once __DIR__ . '/../utils/enums/UserRole.php';
-require_once __DIR__ . '/../utils/enums/UserStatus.php';
+namespace Models;
+
+use Utils\Enums\UserRole;
+use Utils\Enums\UserStatus;
 
 class User {
     // User properties

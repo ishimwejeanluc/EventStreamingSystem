@@ -1,11 +1,11 @@
 <?php
-// services/UserService.php
+namespace Services;
 
-require_once __DIR__ . '/../models/User.php';
-require_once __DIR__ . '/../config/Database.php';
-require_once __DIR__ . '/../utils/Security.php';
-require_once __DIR__ . '/../utils/enums/UserRole.php';
-require_once __DIR__ . '/../utils/enums/UserStatus.php';
+use Models\User;
+use Config\Database;
+use Utils\Security;
+use Utils\Enums\UserRole;
+use Utils\Enums\UserStatus;
 use Ramsey\Uuid\Uuid;
 
 class UserService {
@@ -17,29 +17,24 @@ class UserService {
         }
     }
 
-
-
     public function getById(User $userObj) {
         $id = $userObj->getId();
-        
         // Validate required field
         if (empty($id)) {
-            throw new Exception('User ID is required.');
+            throw new \Exception('User ID is required.');
         }
-
         try {
             $stmt = self::$pdo->prepare("SELECT * FROM users WHERE id = :id");
             $stmt->bindParam(':id', $id);
             $stmt->execute();
-            
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            $user = $stmt->fetch(\PDO::FETCH_ASSOC);
             if ($user) {
                 return $user;
             } else {
-                throw new Exception('User not found.');
+                throw new \Exception('User not found.');
             }
         } catch (PDOException $e) {
-            throw new Exception("Database error: " . $e->getMessage());
+            throw new \Exception("Database error: " . $e->getMessage());
         }
     }
 

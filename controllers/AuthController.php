@@ -2,8 +2,10 @@
 // AuthController.php
 // This controller handles user authentication actions like register and login.
 
-require_once __DIR__ . '/../services/AuthService.php';
-require_once __DIR__ . '/../models/User.php';
+namespace Controllers;
+
+use Services\AuthService;
+use Models\User;
 
 class AuthController {
     // Service for authentication logic
@@ -19,11 +21,12 @@ class AuthController {
     /**
      * Register a new user account
      * @param array $data User registration data
-     * @return array Result status and message
+     * @return array Result status, message, and code
      */
     public function register(array $data) {
         // Check if required fields are provided
         if (empty($data['name']) || empty($data['email']) || empty($data['password'])) {
+            http_response_code(400);
             return [
                 'status' => 'error',
                 'message' => 'Name, email, and password are required fields.'
@@ -41,18 +44,25 @@ class AuthController {
             null
         );
         // Call the service to register the account
-        $result = $this->authService->RegisterAccount($user);
-        if($result === 'User saved') {
-            return ['status' => 'success', 'message' => 'Account registered successfully.'];
-        } else {
-            return ['status' => 'error', 'message' => $result];
+        try {
+            $result = $this->authService->RegisterAccount($user);
+            if($result === 'User saved') {
+                http_response_code(201);
+                return ['status' => 'success', 'message' => 'Account registered successfully.'];
+            } else {
+                http_response_code(500);
+                return ['status' => 'error', 'message' => $result];
+            }
+        } catch (\Exception $e) {
+            http_response_code(500);
+            return ['status' => 'error', 'message' => $e->getMessage()];
         }
     }
 
     /**
      * Log in a user
      * @param array $data Login data (email and password)
-     * @return array Result status and message
+     * @return array Result status, message, token (if success)
      */
     public function login(array $data) {
         $email = $data['email'] ?? '';
@@ -60,6 +70,7 @@ class AuthController {
 
         // Check if email and password are provided
         if (empty($email) || empty($password)) {
+            http_response_code(400);
             return [
                 'status' => 'error',
                 'message' => 'Email and password are required fields.'
@@ -72,11 +83,14 @@ class AuthController {
         // Call the service to attempt login
         $result = $this->authService->Login($user);
 
-        // Return result based on login attempt
-        if ($result === 'Login successful') {
-            return ['status' => 'success', 'message' => $result];
+        // Set HTTP response code based on result
+        if (isset($result['status']) && $result['status'] === 'success') {
+            http_response_code(200);
+        } else if (isset($result['message']) && ($result['message'] === 'Invalid password.' || $result['message'] === 'User not found.')) {
+            http_response_code(401);
         } else {
-            return ['status' => 'error', 'message' => $result];
+            http_response_code(500);
         }
+        return $result;
     }
 }

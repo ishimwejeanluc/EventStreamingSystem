@@ -1,14 +1,17 @@
 <?php
 // services/EventService.php
+// This service handles event-related operations
 
-require_once __DIR__ . '/../models/Event.php';
+namespace Services;
+
+use Models\Event;
+use Config\Database;
 
 class EventService {
     private static $pdo = null;
 
     public function __construct() {
         if (self::$pdo === null) {
-            require_once __DIR__ . '/../config/Database.php';
             self::$pdo = Database::getConnection();
         }
     }

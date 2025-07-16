@@ -1,5 +1,7 @@
 <?php
 
+namespace Utils\Enums;
+
 enum UserStatus: string
 {
     case ACTIVE = 'active';

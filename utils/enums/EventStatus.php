@@ -1,5 +1,7 @@
 <?php
 
+namespace Utils\Enums;
+
 enum EventStatus: string
 {
     case UPCOMING = 'upcoming';

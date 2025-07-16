@@ -2,8 +2,11 @@
 // Security.php
 // This file provides security helper functions like password hashing and verification.
 
+namespace Utils;
+
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use Exception;
 
 class Security {
     
@@ -39,7 +42,7 @@ class Security {
      * @return string
      */
     public static function generateToken(array $userData): string {
-        $key = getenv('JWT_SECRET') ?: 'your-secret-key'; // Use env variable in production!
+        $key = $_ENV['JWT_SECRET'] ; 
         $payload = [
             'iat' => time(),
             'exp' => time() + 3600, // Token valid for 1 hour
@@ -54,7 +57,7 @@ class Security {
      * @return array
      */
     public static function verifyToken(string $token): array {
-        $key = getenv('JWT_SECRET') ?: 'your-secret-key';
+        $key = $_ENV['JWT_SECRET'];
         return (array) JWT::decode($token, new Key($key, 'HS256'));
     }
 }
