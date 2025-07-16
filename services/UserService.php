@@ -2,7 +2,10 @@
 // services/UserService.php
 
 require_once __DIR__ . '/../models/User.php';
-require_once __DIR__ . '/../config/Database.php'
+require_once __DIR__ . '/../config/Database.php';
+require_once __DIR__ . '/../utils/Security.php';
+require_once __DIR__ . '/../utils/enums/UserRole.php';
+require_once __DIR__ . '/../utils/enums/UserStatus.php';
 use Ramsey\Uuid\Uuid;
 
 class UserService {
@@ -14,38 +17,21 @@ class UserService {
         }
     }
 
-    public function create(User $userObj) {
-        $name = $userObj->getName();
-        $email = $userObj->getEmail();
-        $password = $userObj->getPassword();
-        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-        $userId = Uuid::uuid4()->toString();
 
-        try {
-            $stmt = self::$pdo->prepare("INSERT INTO users (id, name, email, password) VALUES (:id, :name, :email, :password)");
-            $stmt->bindParam(':id', $userId);
-            $stmt->bindParam(':name', $name);
-            $stmt->bindParam(':email', $email);
-            $stmt->bindParam(':password', $passwordHash);
 
-            $result = $stmt->execute();
-
-            if ($result) {
-                $userObj->id = $userId;
-                return 'User saved';
-            } else {
-                throw new Exception('User could not be saved.');
-            }
-        } catch (PDOException $e) {
-            throw new Exception("Database error: " . $e->getMessage());
+    public function getById(User $userObj) {
+        $id = $userObj->getId();
+        
+        // Validate required field
+        if (empty($id)) {
+            throw new Exception('User ID is required.');
         }
-    }
 
-    public function getById(User userObj) {
         try {
             $stmt = self::$pdo->prepare("SELECT * FROM users WHERE id = :id");
-            $stmt->bindParam(':id', userObj->getId());
+            $stmt->bindParam(':id', $id);
             $stmt->execute();
+            
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
             if ($user) {
                 return $user;
@@ -57,14 +43,33 @@ class UserService {
         }
     }
 
-    public function update(User userObj){
-
+        public function update(User $userObj) {
+        $id = $userObj->getId();
+        $name = $userObj->getName();
+        $email = $userObj->getEmail();
+        $password = $userObj->getPassword();
         
         try {
+            $sql = "UPDATE users SET name = :name, email = :email";
             
+            // Only include password in update if it's not empty
+            if (!empty($password)) {
+                $passwordHash = Security::hashPassword($password);
+                $sql .= ", password = :password";
+            }
+            
+            $sql .= " WHERE id = :id";
             
             $stmt = self::$pdo->prepare($sql);
-            $result = $stmt->execute($params);
+            $stmt->bindParam(':id', $id);
+            $stmt->bindParam(':name', $name);
+            $stmt->bindParam(':email', $email);
+            
+            if (!empty($password)) {
+                $stmt->bindParam(':password', $passwordHash);
+            }
+            
+            $result = $stmt->execute();
             if ($result && $stmt->rowCount() > 0) {
                 return 'User updated';
             } else {
@@ -89,11 +94,18 @@ class UserService {
             throw new Exception("Database error: " . $e->getMessage());
         }
     }
-    public function setPasswordHash(string $password) {
-        
-        return password_hash($password, PASSWORD_DEFAULT);
-        
-    }
+    
 
+    public function retrieveAll() {
+        try {
+            $stmt = self::$pdo->prepare("SELECT * FROM users");
+            $stmt->execute();
+            $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return $users;
+        } catch (PDOException $e) {
+            throw new Exception("Database error: " . $e->getMessage());
+        }
+    }
+    
     
 } 

@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../utils/enums/VideoStatus.php';
+
 class Video {
     private string $id;
     private string $title;
@@ -8,7 +10,7 @@ class Video {
     private ?int $duration;
     private ?string $eventId;
     private string $uploadedBy;
-    private string $status; // 'draft', 'published', 'archived'
+    private VideoStatus $status;
 
     private ?string $createdBy;
     private ?string $updatedBy;
@@ -18,7 +20,7 @@ class Video {
         string $title,
         string $filePath,
         string $uploadedBy,
-        string $status = 'draft',
+        VideoStatus $status = null,
         ?string $description = null,
         ?string $thumbnailPath = null,
         ?int $duration = null,
@@ -34,7 +36,7 @@ class Video {
         $this->duration = $duration;
         $this->eventId = $eventId;
         $this->uploadedBy = $uploadedBy;
-        $this->status = $status;
+        $this->status = $status ?? VideoStatus::getDefault();
         $this->createdBy = $createdBy;
         $this->updatedBy = $updatedBy;
     }
@@ -47,7 +49,7 @@ class Video {
     public function getDuration(): ?int { return $this->duration; }
     public function getEventId(): ?string { return $this->eventId; }
     public function getUploadedBy(): string { return $this->uploadedBy; }
-    public function getStatus(): string { return $this->status; }
+    public function getStatus(): VideoStatus { return $this->status; }
     public function getCreatedBy(): ?string { return $this->createdBy; }
     public function getUpdatedBy(): ?string { return $this->updatedBy; }
 
@@ -58,7 +60,7 @@ class Video {
     public function setDuration(?int $duration): void { $this->duration = $duration; }
     public function setEventId(?string $id): void { $this->eventId = $id; }
     public function setUploadedBy(string $userId): void { $this->uploadedBy = $userId; }
-    public function setStatus(string $status): void { $this->status = $status; }
+    public function setStatus(VideoStatus $status): void { $this->status = $status; }
     public function setCreatedBy(?string $userId): void { $this->createdBy = $userId; }
     public function setUpdatedBy(?string $userId): void { $this->updatedBy = $userId; }
 }
