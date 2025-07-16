@@ -1,0 +1,21 @@
+# Composer dependencies
+/vendor/
+
+# Environment variables and secrets
+.env
+
+# IDE/editor folders and files
+.vscode/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+#
+
+
+
+#
+
+
+ 
