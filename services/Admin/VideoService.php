@@ -2,7 +2,7 @@
 // services/VideoService.php
 // This service handles video-related operations
 
-namespace Services;
+namespace Services\Admin;
 
 use Models\Video;
 use Config\Database;
@@ -24,32 +24,41 @@ class VideoService {
         $filePath = $video->getFilePath();
         $thumbnailPath = $video->getThumbnailPath();
         $duration = $video->getDuration();
-        $eventId = $video->getEventId();
-        $uploadedBy = $video->getUploadedBy();
-        $status = VideoStatus::getDefault(); // Use string value
+        $status = VideoStatus::getDefault()->value; 
         $createdBy = $video->getCreatedBy();
-        $updatedBy = $video->getUpdatedBy();
         try {
-            $stmt = self::$pdo->prepare("INSERT INTO videos (id, title, description, file_path, thumbnail_path, duration, event_id, uploaded_by, status, created_by, updated_by) VALUES (:id, :title, :description, :file_path, :thumbnail_path, :duration, :event_id, :uploaded_by, :status, :created_by, :updated_by)");
+            $stmt = self::$pdo->prepare("INSERT INTO videos (id, title, description, file_path, thumbnail_path, duration,  status, created_by) VALUES (:id, :title, :description, :file_path, :thumbnail_path, :duration, :status, :created_by)");
             $stmt->bindParam(':id', $id);
             $stmt->bindParam(':title', $title);
             $stmt->bindParam(':description', $description);
             $stmt->bindParam(':file_path', $filePath);
             $stmt->bindParam(':thumbnail_path', $thumbnailPath);
             $stmt->bindParam(':duration', $duration);
-            $stmt->bindParam(':event_id', $eventId);
-            $stmt->bindParam(':uploaded_by', $uploadedBy);
             $stmt->bindParam(':status', $status);
             $stmt->bindParam(':created_by', $createdBy);
-            $stmt->bindParam(':updated_by', $updatedBy);
             $result = $stmt->execute();
             if ($result && $stmt->rowCount() > 0) {
-                return 'Video saved';
+                return [
+                    'status' => 'success',
+                    'message' => 'Video saved',
+                    'video_id' => $id
+                ];
             } else {
-                throw new Exception('Video could not be saved.');
+                return [
+                    'status' => 'error',
+                    'message' => 'Video could not be saved.'
+                ];
             }
-        } catch (PDOException $e) {
-            throw new Exception("Database error: " . $e->getMessage());
+        } catch (\PDOException $e) {
+            return [
+                'status' => 'error',
+                'message' => 'Database error: ' . $e->getMessage()
+            ];
+        } catch (\Exception $e) {
+            return [
+                'status' => 'error',
+                'message' => 'Server error: ' . $e->getMessage()
+            ];
         }
     }
 

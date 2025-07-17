@@ -2,10 +2,11 @@
 // services/EventService.php
 // This service handles event-related operations
 
-namespace Services;
+namespace Services\Admin;
 
 use Models\Event;
 use Config\Database;
+use Utils\EventStatus;
 
 class EventService {
     private static $pdo = null;
@@ -22,7 +23,7 @@ class EventService {
         $description = $event->getDescription();
         $startDate = $event->getStartDate() ? $event->getStartDate()->format('Y-m-d H:i:s') : null;
         $endDate = $event->getEndDate() ? $event->getEndDate()->format('Y-m-d H:i:s') : null;
-        $status = $event->getStatus()->value; // Use string value
+        $status = EventStatus::getDefault(); // Use string value
         $createdBy = $event->getCreatedBy();
         $updatedBy = $event->getUpdatedBy();
         try {
@@ -37,12 +38,27 @@ class EventService {
             $stmt->bindParam(':updated_by', $updatedBy);
             $result = $stmt->execute();
             if ($result && $stmt->rowCount() > 0) {
-                return 'Event saved';
+                return [
+                    'status' => 'success',
+                    'message' => 'Event saved',
+                    'event_id' => $id
+                ];
             } else {
-                throw new Exception('Event could not be saved.');
+                return [
+                    'status' => 'error',
+                    'message' => 'Event could not be saved.'
+                ];
             }
-        } catch (PDOException $e) {
-            throw new Exception("Database error: " . $e->getMessage());
+        } catch (\PDOException $e) {
+            return [
+                'status' => 'error',
+                'message' => 'Database error: ' . $e->getMessage()
+            ];
+        } catch (\Exception $e) {
+            return [
+                'status' => 'error',
+                'message' => 'Server error: ' . $e->getMessage()
+            ];
         }
     }
 

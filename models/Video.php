@@ -14,7 +14,6 @@ class Video {
     private ?string $thumbnailPath;
     private ?int $duration;
     private ?string $eventId;
-    private string $uploadedBy;
     private VideoStatus $status;
 
     private ?string $createdBy;
@@ -24,8 +23,6 @@ class Video {
         string $id,
         string $title,
         string $filePath,
-        string $uploadedBy,
-        VideoStatus $status = null,
         ?string $description = null,
         ?string $thumbnailPath = null,
         ?int $duration = null,
@@ -40,7 +37,6 @@ class Video {
         $this->thumbnailPath = $thumbnailPath;
         $this->duration = $duration;
         $this->eventId = $eventId;
-        $this->uploadedBy = $uploadedBy;
         $this->status = $status ?? VideoStatus::getDefault();
         $this->createdBy = $createdBy;
         $this->updatedBy = $updatedBy;
@@ -53,7 +49,6 @@ class Video {
     public function getThumbnailPath(): ?string { return $this->thumbnailPath; }
     public function getDuration(): ?int { return $this->duration; }
     public function getEventId(): ?string { return $this->eventId; }
-    public function getUploadedBy(): string { return $this->uploadedBy; }
     public function getStatus(): VideoStatus { return $this->status; }
     public function getCreatedBy(): ?string { return $this->createdBy; }
     public function getUpdatedBy(): ?string { return $this->updatedBy; }
@@ -64,7 +59,6 @@ class Video {
     public function setThumbnailPath(?string $path): void { $this->thumbnailPath = $path; }
     public function setDuration(?int $duration): void { $this->duration = $duration; }
     public function setEventId(?string $id): void { $this->eventId = $id; }
-    public function setUploadedBy(string $userId): void { $this->uploadedBy = $userId; }
     public function setStatus(VideoStatus $status): void { $this->status = $status; }
     public function setCreatedBy(?string $userId): void { $this->createdBy = $userId; }
     public function setUpdatedBy(?string $userId): void { $this->updatedBy = $userId; }

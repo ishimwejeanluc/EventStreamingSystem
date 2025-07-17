@@ -25,7 +25,7 @@ class AuthService {
     /**
      * Register a new user account
      * @param User $userObj The user to register
-     * @return string Success or error message
+     * @return array Structured response with status and message (and user_id on success)
      */
     public function RegisterAccount(User $userObj) {
         // Get user details from the User object
@@ -37,11 +37,14 @@ class AuthService {
 
         // Check if required fields are filled
         if (empty($username) || empty($email) || empty($password)) {
-            throw new \Exception('Name, email and password are required fields.');
+            return [
+                'status' => 'error',
+                'message' => 'Name, email and password are required fields.'
+            ];
         }
 
         // Hash the password for security
-        $passwordHash = Utils\Security::hashPassword($password);
+        $passwordHash = Security::hashPassword($password);
         // Generate a unique user ID
         $userId = Uuid::uuid4()->toString();
 
@@ -63,14 +66,27 @@ class AuthService {
             // Check if the user was saved
             if ($result && $stmt->rowCount() > 0) {
                 $userObj->setId($userId);
-                return 'User saved';
+                return [
+                    'status' => 'success',
+                    'message' => 'User saved',
+                    'user_id' => $userId
+                ];
             } else {
-                throw new \Exception('User could not be saved.');
+                return [
+                    'status' => 'error',
+                    'message' => 'User could not be saved.'
+                ];
             }
         } catch (\PDOException $e) {
-            // Print and throw database errors
-            echo "$e->getMessage()";
-            throw new \Exception("Database error: " . $e->getMessage());
+            return [
+                'status' => 'error',
+                'message' => 'Database error: ' . $e->getMessage()
+            ];
+        } catch (\Exception $e) {
+            return [
+                'status' => 'error',
+                'message' => 'Server error: ' . $e->getMessage()
+            ];
         }
     }
 

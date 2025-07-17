@@ -44,19 +44,22 @@ class AuthController {
             null
         );
         // Call the service to register the account
-        try {
-            $result = $this->authService->RegisterAccount($user);
-            if($result === 'User saved') {
-                http_response_code(201);
-                return ['status' => 'success', 'message' => 'Account registered successfully.'];
-            } else {
-                http_response_code(500);
-                return ['status' => 'error', 'message' => $result];
-            }
-        } catch (\Exception $e) {
+        $result = $this->authService->RegisterAccount($user);
+
+        // Set HTTP response code based on result
+        if (isset($result['status']) && $result['status'] === 'success') {
+            http_response_code(201);
+        } else if (isset($result['message']) && (
+            stripos($result['message'], 'duplicate') !== false ||
+            stripos($result['message'], 'already exists') !== false
+        )) {
+            http_response_code(409); // Conflict (duplicate email/username)
+        } else if (isset($result['status']) && $result['status'] === 'error') {
+            http_response_code(400);
+        } else {
             http_response_code(500);
-            return ['status' => 'error', 'message' => $e->getMessage()];
         }
+        return $result;
     }
 
     /**

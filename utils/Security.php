@@ -55,9 +55,27 @@ class Security {
      * Verify a JWT token and return the payload
      * @param string $token
      * @return array
+     * @throws Exception if token is invalid or expired
      */
     public static function verifyToken(string $token): array {
-        $key = $_ENV['JWT_SECRET'];
-        return (array) JWT::decode($token, new Key($key, 'HS256'));
-    }
+        try {
+            $key = $_ENV['JWT_SECRET'];
+            $decoded = JWT::decode($token, new Key($key, 'HS256'));
+            $payload = json_decode(json_encode($decoded), true);
+            
+            // Check if we have data in the payload
+            if (!isset($payload['data'])) {
+                throw new Exception('Invalid token structure: missing data');
+            }
+
+            // Check expiration
+            if (isset($payload['exp']) && $payload['exp'] < time()) {
+                throw new Exception('Token has expired');
+            }
+
+            return $payload;
+        } catch (\Exception $e) {
+            return ['error' => $e->getMessage()];
+        }
+    } 
 }
