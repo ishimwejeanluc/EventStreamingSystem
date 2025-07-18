@@ -1,14 +1,15 @@
 <?php
-// Security.php
+// Helper.php
 // This file provides security helper functions like password hashing and verification.
 
 namespace Utils;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use Utils\enums\UserRole ;
 use Exception;
 
-class Security {
+class Helper {
     
 
     public static function validateEmail($email) {
@@ -78,4 +79,26 @@ class Security {
             return ['error' => $e->getMessage()];
         }
     } 
+    public static function requireAdmin($token) {
+      
+        if (!$token || substr_count($token, '.') !== 2) {
+            http_response_code(401);
+            echo json_encode(['status' => 'error', 'message' => 'Invalid or missing JWT token.']);
+            return null;
+        }
+        try {
+            $payload = Helper::verifyToken($token);
+            $userData = $payload['data'] ?? null;
+            if (!$userData || ($userData['role'] ?? null) !== UserRole::ADMIN->value) {
+                http_response_code(403);
+                echo json_encode(['status' => 'error', 'message' => 'Admin privileges required.']);
+                return null;
+            }
+            return $userData;
+        } catch (\Exception $e) {
+            http_response_code(401);
+            echo json_encode(['status' => 'error', 'message' => 'Invalid or expired token.']);
+            return null;
+        }
+    }
 }

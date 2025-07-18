@@ -1,6 +1,4 @@
 <?php
-// Video.php
-// This file defines the Video model, representing a video in the system.
 
 namespace Models;
 
@@ -14,6 +12,7 @@ class Video {
     private ?string $thumbnailPath;
     private ?int $duration;
     private ?string $eventId;
+    private string $uploadedBy;
     private VideoStatus $status;
 
     private ?string $createdBy;
@@ -23,6 +22,7 @@ class Video {
         string $id,
         string $title,
         string $filePath,
+        VideoStatus $status = null,
         ?string $description = null,
         ?string $thumbnailPath = null,
         ?int $duration = null,

@@ -31,7 +31,7 @@ if (strpos($path, '/api/Admin/') === 0) {
     AdminRoutes::handle($method, $path, $input);
     exit;
 }
-// ... and so on for other route groups
+
 
 // If no route matched
 http_response_code(404);

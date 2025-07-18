@@ -7,7 +7,7 @@ namespace Services;
 use Ramsey\Uuid\Uuid;
 use Config\Database;
 use Models\User;
-use Utils\Security;
+use Utils\Helper;
 
 class AuthService {
     // Database connection (shared for all AuthService instances)
@@ -44,7 +44,7 @@ class AuthService {
         }
 
         // Hash the password for security
-        $passwordHash = Security::hashPassword($password);
+        $passwordHash = Helper::hashPassword($password);
         // Generate a unique user ID
         $userId = Uuid::uuid4()->toString();
 
@@ -112,9 +112,9 @@ class AuthService {
                 $userpassword = $user['password_hash'];
 
                 // Verify the password
-                if (\Utils\Security::verifyPassword($password, $userpassword)) {
+                if (Helper::verifyPassword($password, $userpassword)) {
                     // Generate JWT token with user details
-                    $token = \Utils\Security::generateToken([
+                    $token = Helper::generateToken([
                         'id' => $user['id'],
                         'username' => $user['username'],
                         'email' => $user['email'],

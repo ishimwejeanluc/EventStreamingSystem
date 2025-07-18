@@ -1,7 +1,5 @@
 <?php
 
-namespace Utils\Enums;
-
 enum VideoViewStatus: string
 {
     case VALID = 'valid';

@@ -1,17 +1,14 @@
 <?php
 // services/VideoViewService.php
-// This service handles video view tracking operations
 
-namespace Services;
-
-use Models\VideoView;
-use Config\Database;
+require_once __DIR__ . '/../models/Video_view.php';
 
 class VideoViewService {
     private static $pdo = null;
 
     public function __construct() {
         if (self::$pdo === null) {
+            require_once __DIR__ . '/../config/Database.php';
             self::$pdo = Database::getConnection();
         }
     }

@@ -30,6 +30,11 @@ class AdminRoutes
             echo json_encode($result);
             exit;
         }
+        if ($method == 'POST' && $path === '/api/Admin/Event/createEvent'){
+            $result = $eventController->createEvent($body, $token);
+            echo json_encode($result);
+            exit ;
+        }
         // Add more admin routes as needed
 
         http_response_code(404);

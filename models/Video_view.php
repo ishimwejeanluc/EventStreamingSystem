@@ -1,11 +1,5 @@
 <?php
-// VideoView.php
-// This file defines the VideoView model, representing a video view record in the system.
-
-namespace Models;
-
-use DateTime;
-use Utils\Enums\VideoViewStatus;
+require_once __DIR__ . '/../utils/enums/VideoViewStatus.php';
 
 class VideoView {
     private string $id;
