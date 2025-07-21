@@ -38,4 +38,28 @@ class VideoController {
         $video = new Video($id, $title, $filePath, $description, $thumbnailPath, $duration, $createdBy, $updatedBy);
         return $this->videoService->create($video);
     }
+
+    public function getVideo($id, $authHeader) {
+        $user = Helper::requireAdmin($authHeader);
+        if (!$user) return;
+        return $this->videoService->getById($id);
+    }
+
+    public function updateVideo($id, $data, $authHeader) {
+        $user = Helper::requireAdmin($authHeader);
+        if (!$user) return;
+        return $this->videoService->update($id, $data);
+    }
+
+    public function deleteVideo($id, $authHeader) {
+        $user = Helper::requireAdmin($authHeader);
+        if (!$user) return;
+        return $this->videoService->delete($id);
+    }
+
+    public function getAllVideos($authHeader) {
+        $user = Helper::requireAdmin($authHeader);
+        if (!$user) return;
+        return $this->videoService->getAll();
+    }
 } 

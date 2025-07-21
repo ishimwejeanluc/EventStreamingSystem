@@ -22,7 +22,7 @@ class Video {
         string $id,
         string $title,
         string $filePath,
-        VideoStatus $status = null,
+        
         ?string $description = null,
         ?string $thumbnailPath = null,
         ?int $duration = null,
@@ -37,7 +37,6 @@ class Video {
         $this->thumbnailPath = $thumbnailPath;
         $this->duration = $duration;
         $this->eventId = $eventId;
-        $this->status = $status ?? VideoStatus::getDefault();
         $this->createdBy = $createdBy;
         $this->updatedBy = $updatedBy;
     }

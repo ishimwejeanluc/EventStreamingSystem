@@ -63,14 +63,105 @@ class VideoService {
     }
 
     public function getById($id) {
-        // Implement read logic
+        try {
+            $stmt = self::$pdo->prepare("SELECT * FROM videos WHERE id = :id");
+            $stmt->bindParam(':id', $id);
+            $stmt->execute();
+            $video = $stmt->fetch(\PDO::FETCH_ASSOC);
+            if (!$video) {
+                http_response_code(404);
+                return ['status' => 'error', 'message' => 'Video not found', 'data' => null];
+            }
+            http_response_code(200);
+            return ['status' => 'success', 'message' => 'Video retrieved', 'data' => $video];
+        } catch (\Exception $e) {
+            http_response_code(500);
+            return ['status' => 'error', 'message' => 'Server error: ' . $e->getMessage(), 'data' => null];
+        }
     }
 
     public function update($id, $data) {
-        // Implement update logic
+        try {
+            // Check if video is not archived before allowing updates
+            $checkStmt = self::$pdo->prepare("SELECT status FROM videos WHERE id = :id");
+            $checkStmt->bindParam(':id', $id);
+            $checkStmt->execute();
+            $video = $checkStmt->fetch(\PDO::FETCH_ASSOC);
+            if (!$video) {
+                http_response_code(404);
+                return ['status' => 'error', 'message' => 'Video not found.', 'data' => null];
+            }
+            if ($video['status'] === VideoStatus::ARCHIVED->value) {
+                http_response_code(400);
+                return ['status' => 'error', 'message' => 'Cannot update an archived video.', 'data' => null];
+            }
+            $fields = [];
+            $params = [':id' => $id];
+            if (isset($data['title'])) {
+                $fields[] = 'title = :title';
+                $params[':title'] = $data['title'];
+            }
+            if (isset($data['description'])) {
+                $fields[] = 'description = :description';
+                $params[':description'] = $data['description'];
+            }
+            if (isset($data['status']) && VideoStatus::isValid($data['status'])) {
+                $fields[] = 'status = :status';
+                $params[':status'] = $data['status'];
+            }
+            if (empty($fields)) {
+                http_response_code(400);
+                return ['status' => 'error', 'message' => 'No valid fields to update.', 'data' => null];
+            }
+            $sql = "UPDATE videos SET ".implode(', ', $fields)." WHERE id = :id";
+            $stmt = self::$pdo->prepare($sql);
+            foreach ($params as $key => $value) {
+                $stmt->bindValue($key, $value);
+            }
+            $stmt->execute();
+            if ($stmt->rowCount() === 0) {
+                http_response_code(404);
+                return ['status' => 'error', 'message' => 'Video not found or no changes made.', 'data' => null];
+            }
+            http_response_code(200);
+            return ['status' => 'success', 'message' => 'Video updated', 'data' => null];
+        } catch (\Exception $e) {
+            http_response_code(500);
+            return ['status' => 'error', 'message' => 'Server error: ' . $e->getMessage(), 'data' => null];
+        }
     }
 
     public function delete($id) {
-        // Implement delete logic
+        try {
+            $status = VideoStatus::ARCHIVED->value;
+            $stmt = self::$pdo->prepare("UPDATE videos SET status = :status WHERE id = :id");
+            $stmt->bindParam(':status', $status);
+            $stmt->bindParam(':id', $id);
+            $stmt->execute();
+            if ($stmt->rowCount() === 0) {
+                http_response_code(404);
+                return ['status' => 'error', 'message' => 'Video not found.', 'data' => null];
+            }
+            http_response_code(200);
+            return ['status' => 'success', 'message' => 'Video archived', 'data' => null];
+        } catch (\Exception $e) {
+            http_response_code(500);
+            return ['status' => 'error', 'message' => 'Server error: ' . $e->getMessage(), 'data' => null];
+        }
+    }
+
+    public function getAll() {
+        try {
+            $statusArchived = VideoStatus::ARCHIVED->value;
+            $stmt = self::$pdo->prepare("SELECT * FROM videos WHERE status != :archived");
+            $stmt->bindParam(':archived', $statusArchived);
+            $stmt->execute();
+            $videos = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            http_response_code(200);
+            return ['status' => 'success', 'message' => 'Videos retrieved', 'data' => $videos];
+        } catch (\Exception $e) {
+            http_response_code(500);
+            return ['status' => 'error', 'message' => 'Server error: ' . $e->getMessage(), 'data' => null];
+        }
     }
 } 

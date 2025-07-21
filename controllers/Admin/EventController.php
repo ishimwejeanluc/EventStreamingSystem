@@ -39,4 +39,28 @@ class EventController {
         $event = new Event($id, $name, $description, $startDate, $endDate, $createdBy, $updatedBy);
         return $this->eventService->create($event, $videoId);
     }
+
+    public function getEvent($id, $authHeader) {
+        $user = Helper::requireAdmin($authHeader);
+        if (!$user) return;
+        return $this->eventService->getById($id);
+    }
+
+    public function updateEvent($id, $data, $authHeader) {
+        $user = Helper::requireAdmin($authHeader);
+        if (!$user) return;
+        return $this->eventService->update($id, $data);
+    }
+
+    public function deleteEvent($id, $authHeader) {
+        $user = Helper::requireAdmin($authHeader);
+        if (!$user) return;
+        return $this->eventService->delete($id);
+    }
+
+    public function getAllEvents($authHeader) {
+        $user = Helper::requireAdmin($authHeader);
+        if (!$user) return;
+        return $this->eventService->getAll();
+    }
 } 
