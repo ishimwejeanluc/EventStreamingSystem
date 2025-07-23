@@ -1,6 +1,5 @@
 <?php
-// User.php
-// This file defines the User model, representing a user in the system.
+
 
 namespace Models;
 
@@ -18,17 +17,7 @@ class User {
     private ?string $createdBy;
     private ?string $updatedBy;
 
-    /**
-     * User constructor: creates a new user object
-     * @param string $id Unique user ID
-     * @param string $username User's name
-     * @param string $email User's email
-     * @param string $password User's password (hashed)
-     * @param UserRole|null $role User's role (optional)
-     * @param UserStatus|null $status User's status (optional)
-     * @param string|null $createdBy Who created the user (optional)
-     * @param string|null $updatedBy Who last updated the user (optional)
-     */
+   
     public function __construct(
         string $id,
         string $username,

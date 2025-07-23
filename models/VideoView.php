@@ -1,5 +1,10 @@
 <?php
-require_once __DIR__ . '/../utils/enums/VideoViewStatus.php';
+
+namespace Models;
+
+use DateTime;
+use Utils\Enums\VideoViewStatus;
+
 
 class VideoView {
     private string $id;
@@ -16,17 +21,14 @@ class VideoView {
         string $videoId,
         ?string $userId,
         DateTime $viewedAt,
-        VideoViewStatus $status = null,
-        ?string $createdBy = null,
-        ?string $updatedBy = null
+        VideoViewStatus $status ,
     ) {
         $this->id = $id;
         $this->videoId = $videoId;
         $this->userId = $userId;
         $this->viewedAt = $viewedAt;
-        $this->status = $status ?? VideoViewStatus::getDefault();
-        $this->createdBy = $createdBy;
-        $this->updatedBy = $updatedBy;
+        
+    
     }
 
     public function getId(): string { return $this->id; }
@@ -34,13 +36,11 @@ class VideoView {
     public function getUserId(): ?string { return $this->userId; }
     public function getViewedAt(): DateTime { return $this->viewedAt; }
     public function getStatus(): VideoViewStatus { return $this->status; }
-    public function getCreatedBy(): ?string { return $this->createdBy; }
-    public function getUpdatedBy(): ?string { return $this->updatedBy; }
+   
 
     public function setVideoId(string $videoId): void { $this->videoId = $videoId; }
+    public function setVideo(Video $video): void { $this->video = $video; }
     public function setUserId(?string $userId): void { $this->userId = $userId; }
     public function setViewedAt(DateTime $date): void { $this->viewedAt = $date; }
     public function setStatus(VideoViewStatus $status): void { $this->status = $status; }
-    public function setCreatedBy(?string $userId): void { $this->createdBy = $userId; }
-    public function setUpdatedBy(?string $userId): void { $this->updatedBy = $userId; }
 }

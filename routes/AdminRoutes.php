@@ -3,6 +3,7 @@ namespace Routes;
 
 use Controllers\Admin\EventController;
 use Controllers\Admin\VideoController;
+use Controllers\Admin\StatisticsController;
 
 class AdminRoutes
 {
@@ -10,6 +11,7 @@ class AdminRoutes
     {
         $eventController = new EventController();
         $videoController = new VideoController();
+        $statisticsController = new StatisticsController();
 
         // Extract token from Authorization header
         $authHeader = $input['headers']['Authorization'] ?? null;
@@ -79,6 +81,32 @@ class AdminRoutes
         // Get All Videos
         if ($method === 'GET' && $path === '/api/Admin/videos') {
             $result = $videoController->getAllVideos($token);
+            echo json_encode($result);
+            exit;
+        }
+
+        // --- Statistics Routes ---
+        // Get View Statistics
+        if ($method === 'GET' && $path === '/api/Admin/statistics/views') {
+            $result = $statisticsController->getViewStatistics($token);
+            echo json_encode($result);
+            exit;
+        }
+        // Get User Statistics
+        if ($method === 'GET' && $path === '/api/Admin/statistics/users') {
+            $result = $statisticsController->getUserStatistics($token);
+            echo json_encode($result);
+            exit;
+        }
+        // Get Event Statistics
+        if ($method === 'GET' && $path === '/api/Admin/statistics/events') {
+            $result = $statisticsController->getEventStatistics($token);
+            echo json_encode($result);
+            exit;
+        }
+        // Get Overall Statistics Dashboard
+        if ($method === 'GET' && $path === '/api/Admin/statistics/dashboard') {
+            $result = $statisticsController->getDashboardStatistics($token);
             echo json_encode($result);
             exit;
         }

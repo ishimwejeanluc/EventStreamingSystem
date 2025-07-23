@@ -6,6 +6,7 @@ namespace Controllers;
 
 use Services\AuthService;
 use Models\User;
+use Ramsey\Uuid\Uuid;
 
 class AuthController {
     // Service for authentication logic
@@ -33,7 +34,7 @@ class AuthController {
             ];
         }
         // Generate a unique user ID
-        $id = \Ramsey\Uuid\Uuid::uuid4()->toString();
+        $id = Uuid::uuid4()->toString();
         // Create a new User object
         $user = new User(
             $id,
@@ -45,6 +46,56 @@ class AuthController {
         );
         // Call the service to register the account
         $result = $this->authService->RegisterAccount($user);
+
+        // Set HTTP response code based on result
+        if (isset($result['status']) && $result['status'] === 'success') {
+            http_response_code(201);
+        } else if (isset($result['message']) && (
+            stripos($result['message'], 'duplicate') !== false ||
+            stripos($result['message'], 'already exists') !== false
+        )) {
+            http_response_code(409); // Conflict (duplicate email/username)
+        } else if (isset($result['status']) && $result['status'] === 'error') {
+            http_response_code(400);
+        } else {
+            http_response_code(500);
+        }
+        return $result;
+    }
+
+    /**
+     * Register a new admin account
+     * @param array $data Admin registration data
+     * @param string $authHeader Authorization header for super admin verification
+     * @return array Result status, message, and code
+     */
+    public function registerAdmin(array $data) {
+        
+
+        // Check if required fields are provided
+        if (empty($data['name']) || empty($data['email']) || empty($data['password'])) {
+            http_response_code(400);
+            return [
+                'status' => 'error',
+                'message' => 'Name, email, and password are required fields.'
+            ];
+        }
+
+        // Generate a unique user ID
+        $id = Uuid::uuid4()->toString();
+        
+        // Create a new User object for admin
+        $user = new User(
+            $id,
+            $data['name'],
+            $data['email'],
+            $data['password'],
+             null,
+            null,
+        );
+
+        // Call the service to register the admin account
+        $result = $this->authService->RegisterAdmin($user);
 
         // Set HTTP response code based on result
         if (isset($result['status']) && $result['status'] === 'success') {

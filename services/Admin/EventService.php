@@ -19,7 +19,7 @@ class EventService {
         }
     }
 
-    public function create(Event $event, ?string $videoId = null) {
+    public function create(Event $event,$videoId) {
         $id = $event->getId();
         $name = $event->getName();
         $description = $event->getDescription();
@@ -29,7 +29,7 @@ class EventService {
         $createdBy = $event->getCreatedBy();
         $updatedBy = $event->getUpdatedBy();
         try {
-            $stmt = self::$pdo->prepare("INSERT INTO events (id, name, description, start_date, end_date, status, created_by, updated_by) VALUES (:id, :name, :description, :start_date, :end_date, :status, :created_by, :updated_by)");
+            $stmt = self::$pdo->prepare("INSERT INTO events (id, name, description, start_date, end_date, status, created_by) VALUES (:id, :name, :description, :start_date, :end_date, :status, :created_by)");
             $stmt->bindParam(':id', $id);
             $stmt->bindParam(':name', $name);
             $stmt->bindParam(':description', $description);
@@ -40,14 +40,14 @@ class EventService {
             $stmt->bindParam(':end_date', $endDateStr);
             $stmt->bindParam(':status', $status);
             $stmt->bindParam(':created_by', $createdBy);
-            $stmt->bindParam(':updated_by', $updatedBy);
             $result = $stmt->execute();
             if ($result && $stmt->rowCount() > 0) {
-                // If videoId is provided, update the video to link to this event
+        
                 if ($videoId) {
-                    $updateStmt = self::$pdo->prepare("UPDATE videos SET event_id = :event_id WHERE id = :video_id");
+                    $updateStmt = self::$pdo->prepare("UPDATE videos SET event_id = :event_id , updated_by = :updated_by WHERE id = :video_id");
                     $updateStmt->bindParam(':event_id', $id);
                     $updateStmt->bindParam(':video_id', $videoId);
+                    $updateStmt->bindParam(':updated_by', $updatedBy);
                     $updateStmt->execute();
                 }
                 return [
@@ -92,7 +92,7 @@ class EventService {
         }
     }
 
-    public function update($id, $data) {
+    public function update($id, $data, $adminId) {
         try {
             // Check if event is not cancelled before allowing updates
             $checkStmt = self::$pdo->prepare("SELECT status FROM events WHERE id = :id");
@@ -121,6 +121,12 @@ class EventService {
                 $fields[] = 'status = :status';
                 $params[':status'] = $data['status'];
             }
+
+            // Always update the updated_by and updated_at fields
+            $fields[] = 'updated_by = :updated_by';
+            $fields[] = 'updated_at = NOW()';
+            $params[':updated_by'] = $adminId;  // Admin is updating the event
+
             if (empty($fields)) {
                 http_response_code(400);
                 return ['status' => 'error', 'message' => 'No valid fields to update.', 'data' => null];
@@ -143,12 +149,13 @@ class EventService {
         }
     }
 
-    public function delete($id) {
+    public function delete($id, $adminId) {
         try {
             $status = EventStatus::CANCELLED->value;
-            $stmt = self::$pdo->prepare("UPDATE events SET status = :status WHERE id = :id");
+            $stmt = self::$pdo->prepare("UPDATE events SET status = :status, updated_by = :updated_by, updated_at = NOW() WHERE id = :id");
             $stmt->bindParam(':status', $status);
             $stmt->bindParam(':id', $id);
+            $stmt->bindParam(':updated_by', $adminId);
             $stmt->execute();
             if ($stmt->rowCount() === 0) {
                 http_response_code(404);

@@ -11,6 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 require_once __DIR__ . '/../../vendor/autoload.php';
 use Routes\AuthRoutes;
 use Routes\AdminRoutes;
+use Routes\UserRoutes;
 
 // Load environment variables
 $projectRoot = dirname(__DIR__, 2);
@@ -37,6 +38,16 @@ if (strpos($path, '/api/Admin/') === 0) {
         'headers' => $headers,
     ];
     AdminRoutes::handle($method, $path, $input);
+    exit;
+}
+
+if (strpos($path, '/api/users/') === 0) {
+    // User routes require headers
+    $input = [
+        'body' => $rawBody,
+        'headers' => $headers,
+    ];
+    UserRoutes::handle($method, $path, $input);
     exit;
 }
 

@@ -23,6 +23,13 @@ class AuthRoutes
             exit;
         }
 
+        
+        if ($method === 'POST' && $path === '/api/Auth/register/admin') {
+            $result = $authController->registerAdmin($input ?? []);
+            echo json_encode($result);
+            exit;
+        }
+
         // If no route matched
         http_response_code(404);
         echo json_encode(['status' => 'error', 'message' => 'Not found']);

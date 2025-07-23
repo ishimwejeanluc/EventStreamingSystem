@@ -16,32 +16,19 @@ class Helper {
         return filter_var($email, FILTER_VALIDATE_EMAIL);
     }
 
-    /**
-     * Hash a password using a secure algorithm
-     * @param string $password The plain password
-     * @return string The hashed password
-     */
+    
     public static function hashPassword($password) {
         // Use PHP's password_hash function for security
         return password_hash($password, PASSWORD_DEFAULT);
     }
 
-    /**
-     * Verify a password against a hash
-     * @param string $password The plain password
-     * @param string $hash The hashed password
-     * @return bool True if the password matches, false otherwise
-     */
+  
     public static function verifyPassword($password, $hash) {
         // Use password_verify to check if password matches the hash
         return password_verify($password, $hash);
     }
 
-    /**
-     * Generate a JWT token for a user
-     * @param array $userData - should include id, username, email, role
-     * @return string
-     */
+    
     public static function generateToken(array $userData): string {
         $key = $_ENV['JWT_SECRET'] ; 
         $payload = [
@@ -52,12 +39,7 @@ class Helper {
         return JWT::encode($payload, $key, 'HS256');
     }
 
-    /**
-     * Verify a JWT token and return the payload
-     * @param string $token
-     * @return array
-     * @throws Exception if token is invalid or expired
-     */
+    
     public static function verifyToken(string $token): array {
         try {
             $key = $_ENV['JWT_SECRET'];
@@ -92,6 +74,28 @@ class Helper {
             if (!$userData || ($userData['role'] ?? null) !== UserRole::ADMIN->value) {
                 http_response_code(403);
                 echo json_encode(['status' => 'error', 'message' => 'Admin privileges required.']);
+                return null;
+            }
+            return $userData;
+        } catch (\Exception $e) {
+            http_response_code(401);
+            echo json_encode(['status' => 'error', 'message' => 'Invalid or expired token.']);
+            return null;
+        }
+    }
+    
+    public static function requireUser($token) {
+        if (!$token || substr_count($token, '.') !== 2) {
+            http_response_code(401);
+            echo json_encode(['status' => 'error', 'message' => 'Invalid or missing JWT token.']);
+            return null;
+        }
+        try {
+            $payload = Helper::verifyToken($token);
+            $userData = $payload['data'] ?? null;
+            if (!$userData) {
+                http_response_code(403);
+                echo json_encode(['status' => 'error', 'message' => 'User privileges required.']);
                 return null;
             }
             return $userData;
