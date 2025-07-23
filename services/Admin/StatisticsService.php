@@ -71,10 +71,10 @@ class StatisticsService {
      */
     public function getEventStats() {
         try {
-            // Active events
+            // Active (ongoing) events
             $activeEventsStmt = self::$pdo->query("
                 SELECT COUNT(*) as count FROM events 
-                WHERE status = '".EventStatus::ACTIVE->value."'
+                WHERE status = '".EventStatus::ONGOING->value."'
             ");
             $activeEvents = $activeEventsStmt->fetch(\PDO::FETCH_ASSOC)['count'];
 
@@ -156,10 +156,84 @@ class StatisticsService {
         }
     }
 
-    /**
-     * Get engagement-related statistics
-     * @return array Engagement statistics
-     */
+    
+    public function getViewStatistics() {
+        try {
+            // Total views
+            $totalViewsStmt = self::$pdo->query("
+                SELECT COUNT(*) as count 
+                FROM video_views 
+                WHERE status = '".VideoViewStatus::VALID->value."'
+            ");
+            $totalViews = $totalViewsStmt->fetch(\PDO::FETCH_ASSOC)['count'];
+
+            // Views in last 24 hours
+            $dailyViewsStmt = self::$pdo->query("
+                SELECT COUNT(*) as count 
+                FROM video_views 
+                WHERE status = '".VideoViewStatus::VALID->value."'
+                AND viewed_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+            ");
+            $dailyViews = $dailyViewsStmt->fetch(\PDO::FETCH_ASSOC)['count'];
+
+            // Views by date (last 7 days)
+            $weeklyTrendStmt = self::$pdo->query("
+                SELECT 
+                    DATE(viewed_at) as view_date,
+                    COUNT(*) as view_count
+                FROM video_views
+                WHERE status = '".VideoViewStatus::VALID->value."'
+                AND viewed_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                GROUP BY DATE(viewed_at)
+                ORDER BY view_date DESC
+            ");
+            $weeklyTrend = $weeklyTrendStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            // Most viewed videos
+            $topVideosStmt = self::$pdo->query("
+                SELECT 
+                    v.id,
+                    v.title,
+                    COUNT(vv.id) as view_count
+                FROM videos v
+                JOIN video_views vv ON v.id = vv.video_id
+                WHERE vv.status = '".VideoViewStatus::VALID->value."'
+                GROUP BY v.id
+                ORDER BY view_count DESC
+                LIMIT 5
+            ");
+            $topVideos = $topVideosStmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            // Unique viewers
+            $uniqueViewersStmt = self::$pdo->query("
+                SELECT COUNT(DISTINCT user_id) as count
+                FROM video_views
+                WHERE status = '".VideoViewStatus::VALID->value."'
+                AND user_id IS NOT NULL
+            ");
+            $uniqueViewers = $uniqueViewersStmt->fetch(\PDO::FETCH_ASSOC)['count'];
+
+            http_response_code(200);
+            return [
+                'status' => 'success',
+                'data' => [
+                    'total_views' => $totalViews,
+                    'views_last_24h' => $dailyViews,
+                    'unique_viewers' => $uniqueViewers,
+                    'weekly_trend' => $weeklyTrend,
+                    'top_videos' => $topVideos
+                ]
+            ];
+        } catch (\Exception $e) {
+            http_response_code(500);
+            return [
+                'status' => 'error',
+                'code' => 'VIEW_STATS_ERROR',
+                'message' => 'Failed to get view statistics: ' . $e->getMessage()
+            ];
+        }
+    }
+
     public function getEngagementStats() {
         try {
             // Total views

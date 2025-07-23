@@ -19,7 +19,7 @@ class StatisticsController {
         if (!$admin) return;
 
         try {
-            $stats = $this->statisticsService->getVideoViewStats();
+            $stats = $this->statisticsService->getViewStatistics();
             return [
                 'status' => 'success',
                 'message' => 'View statistics retrieved successfully',
@@ -80,10 +80,9 @@ class StatisticsController {
 
         try {
             $stats = [
-                'overview' => $this->statisticsService->getOverallStats(),
-                'recent_events' => $this->statisticsService->getRecentEventStats(),
-                'recent_views' => $this->statisticsService->getRecentViewStats(),
-                'user_activity' => $this->statisticsService->getUserActivityStats()
+                'users' => $this->statisticsService->getUserStats(),
+                'events' => $this->statisticsService->getEventStats(),
+                'views' => $this->statisticsService->getViewStatistics()
             ];
             return [
                 'status' => 'success',
@@ -99,61 +98,5 @@ class StatisticsController {
         }
     }
 
-    public function getOverallStats($authHeader) {
-        $admin = Helper::requireAdmin($authHeader);
-        if (!$admin) return;
-
-        try {
-            $stats = [
-                'users' => $this->statisticsService->getUserStats(),
-                'events' => $this->statisticsService->getEventStats(),
-                'videos' => $this->statisticsService->getVideoStats(),
-                'engagement' => $this->statisticsService->getEngagementStats(),
-            ];
-
-            return [
-                'status' => 'success',
-                'message' => 'Statistics retrieved successfully',
-                'code' => 'STATS_RETRIEVED',
-                'data' => $stats
-            ];
-        } catch (\Exception $e) {
-            http_response_code(500);
-            return [
-                'status' => 'error',
-                'message' => 'Failed to retrieve statistics: ' . $e->getMessage(),
-                'code' => 'STATS_RETRIEVAL_ERROR'
-            ];
-        }
-    }
-
-
-
    
-    public function getPeriodStats($authHeader, $startDate, $endDate) {
-        $admin = Helper::requireAdmin($authHeader);
-        if (!$admin) return;
-
-        try {
-            $stats = $this->statisticsService->getPeriodStats($startDate, $endDate);
-
-            return [
-                'status' => 'success',
-                'message' => 'Period statistics retrieved successfully',
-                'data' => [
-                    'period' => [
-                        'start' => $startDate,
-                        'end' => $endDate
-                    ],
-                    'statistics' => $stats
-                ]
-            ];
-        } catch (\Exception $e) {
-            http_response_code(500);
-            return [
-                'status' => 'error',
-                'message' => 'Failed to retrieve period statistics: ' . $e->getMessage()
-            ];
-        }
-    }
 }
