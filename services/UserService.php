@@ -21,9 +21,7 @@ class UserService {
         }
     }
 
-    /**
-     * Update user's own profile
-     */
+    
     public function updateProfile($userId, $data) {
         try {
             // Check if user exists and is active

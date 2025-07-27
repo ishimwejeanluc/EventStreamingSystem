@@ -4,6 +4,7 @@ namespace Routes;
 use Controllers\Admin\EventController;
 use Controllers\Admin\VideoController;
 use Controllers\Admin\StatisticsController;
+use Controllers\Admin\UserController;
 
 class AdminRoutes
 {
@@ -12,6 +13,7 @@ class AdminRoutes
         $eventController = new EventController();
         $videoController = new VideoController();
         $statisticsController = new StatisticsController();
+        $userController = new UserController();
 
         // Extract token from Authorization header
         $authHeader = $input['headers']['Authorization'] ?? null;
@@ -107,6 +109,38 @@ class AdminRoutes
         // Get Overall Statistics Dashboard
         if ($method === 'GET' && $path === '/api/Admin/statistics/dashboard') {
             $result = $statisticsController->getDashboardStatistics($token);
+            echo json_encode($result);
+            exit;
+        }
+
+        // --- User Management Routes ---
+        // Create User
+        if ($method === 'POST' && $path === '/api/Admin/users') {
+            $result = $userController->create($body, $token);
+            echo json_encode($result);
+            exit;
+        }
+        // Update User
+        if ($method === 'PUT' && preg_match('#^/api/Admin/users/([^/]+)$#', $path, $matches)) {
+            $result = $userController->update($matches[1], $body, $token);
+            echo json_encode($result);
+            exit;
+        }
+        // Activate User
+        if ($method === 'PUT' && preg_match('#^/api/Admin/users/activate/([^/]+)$#', $path, $matches)) {
+            $result = $userController->activate($matches[1], $token);
+            echo json_encode($result);
+            exit;
+        }
+        // Delete User
+        if ($method === 'DELETE' && preg_match('#^/api/Admin/users/([^/]+)$#', $path, $matches)) {
+            $result = $userController->delete($matches[1], $token);
+            echo json_encode($result);
+            exit;
+        }
+        // Get All Users
+        if ($method === 'GET' && $path === '/api/Admin/users') {
+            $result = $userController->getAllUsers($token);
             echo json_encode($result);
             exit;
         }

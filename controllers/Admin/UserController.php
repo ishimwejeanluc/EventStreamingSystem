@@ -1,19 +1,19 @@
 <?php
-// controllers/Admin/UserController.php
-// This controller handles admin-only user management actions
 
 namespace Controllers\Admin;
 
-use Services\Admin\AdminUservice;
+use Services\Admin\AdminUserService;
 use Models\User;
 use Utils\Enums\UserRole;
+use Utils\Helper;
 use Ramsey\Uuid\Uuid;
+
 
 class UserController {
     private $adminUservice;
 
     public function __construct() {
-        $this->adminUservice = new AdminUservice();
+        $this->adminUservice = new AdminUserService();
     }
 
     public function create($data, $authHeader) {
@@ -36,7 +36,7 @@ class UserController {
                 $data['password'],
                 isset($data['role']) ? UserRole::from($data['role']) : UserRole::USER->getDefault(), 
                 null,
-                $admin['id']  /
+                $admin['id']  
             );
 
             
@@ -75,6 +75,20 @@ class UserController {
             return [
                 'status' => 'error',
                 'message' => 'Failed to delete user: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    public function activate($id, $authHeader) {
+        $admin = Helper::requireAdmin($authHeader);
+        if (!$admin) return;
+        try {
+            return $this->adminUservice->activate($id, $admin['id']);
+        } catch (\Exception $e) {
+            http_response_code(500);
+            return [
+                'status' => 'error',
+                'message' => 'Failed to activate user: ' . $e->getMessage()
             ];
         }
     }

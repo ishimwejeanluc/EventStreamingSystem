@@ -8,13 +8,13 @@ use Models\User;
 use Config\Database;
 use Utils\Enums\UserRole;
 use Utils\Enums\UserStatus;
-use Utils\Security;
+use Utils\Helper;
 use Ramsey\Uuid\Uuid;
 
 
 
 
-class UserService {
+class AdminUserService {
     private static $pdo = null;
 
     public function __construct() {
@@ -27,7 +27,7 @@ class UserService {
     public function create(User $userObj) {
         try {
             // Hash the password from the user object
-            $hashedPassword = Security::hashPassword($userObj->getPassword());
+            $hashedPassword = Helper::hashPassword($userObj->getPassword());
             
             $stmt = self::$pdo->prepare("INSERT INTO users (id, username, email, password_hash, role, status, created_by) 
                 VALUES (:id, :username, :email, :password, :role, :status, :created_by)");
@@ -37,7 +37,7 @@ class UserService {
                 ':username' => $userObj->getUsername(),
                 ':email' => $userObj->getEmail(),
                 ':password' => $hashedPassword,
-                ':role' => $UserRole::getDefault()->value,
+                ':role' => $userObj->getRole()->value,
                 ':status' => UserStatus::ACTIVE->value,
                 ':created_by' => $userObj->getCreatedBy()
             ]);
@@ -57,7 +57,7 @@ class UserService {
             $params = [':id' => $id];
             if (isset($data['password'])) {
                 $fields[] = 'password_hash = :password';
-                $params[':password'] = Security::hashPassword($data['password']);
+                $params[':password'] = Helper::hashPassword($data['password']);
             }
             if (isset($data['role'])) {
                 $fields[] = 'role = :role';
@@ -94,10 +94,9 @@ class UserService {
         try {
         
 
-            $sql = "SELECT id, email, role, status FROM users  WHERE status != :inactive ORDER BY created_at DESC";
+            $sql = "SELECT id, username, email, role, status FROM users  ORDER BY created_at DESC";
 
             $stmt = self::$pdo->prepare($sql);
-            $stmt->bindValue(':inactive', UserStatus::INACTIVE->value);
             
             
             $stmt->execute();
@@ -119,6 +118,27 @@ class UserService {
         }
     }
 
+
+    public function activate($id, $adminUserId) {
+        try {
+            $stmt = self::$pdo->prepare("UPDATE users SET status = :status, updated_by = :updated_by WHERE id = :id");
+            $stmt->execute([
+                ':id' => $id,
+                ':status' => UserStatus::ACTIVE->value,
+                ':updated_by' => $adminUserId
+            ]);
+
+            if ($stmt->rowCount() === 0) {
+                http_response_code(404);
+                return ['status' => 'error', 'message' => 'User not found.', 'data' => null];
+            }
+
+            return ['status' => 'success', 'message' => 'User activated successfully', 'data' => null];
+        } catch (\Exception $e) {
+            http_response_code(500);
+            return ['status' => 'error', 'message' => 'Server error: ' . $e->getMessage(), 'data' => null];
+        }
+    }
 
     public function delete($id, $adminUserId) {
         try {
