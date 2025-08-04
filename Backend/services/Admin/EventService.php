@@ -1,0 +1,221 @@
+<?php
+// services/EventService.php
+// This service handles event-related operations
+
+namespace Services\Admin;
+
+use Models\Event;
+use Config\Database;
+use Utils\Enums\EventStatus;
+use Services\Admin\VideoService ;
+
+class EventService {
+    private static $pdo = null;
+    
+
+    public function __construct() {
+        if (self::$pdo === null) {
+            self::$pdo = Database::getConnection();
+        }
+    }
+
+    public function create(Event $event,$videoId) {
+        $id = $event->getId();
+        $name = $event->getName();
+        $description = $event->getDescription();
+        $startDate = $event->getStartDate();
+        $endDate = $event->getEndDate();
+        $status = EventStatus::getDefault()->value; // Use string value
+        $createdBy = $event->getCreatedBy();
+        $updatedBy = $event->getUpdatedBy();
+        try {
+            $stmt = self::$pdo->prepare("INSERT INTO events (id, name, description, start_date, end_date, status, created_by) VALUES (:id, :name, :description, :start_date, :end_date, :status, :created_by)");
+            $stmt->bindParam(':id', $id);
+            $stmt->bindParam(':name', $name);
+            $stmt->bindParam(':description', $description);
+            $startDateStr = $startDate ? $startDate->format('Y-m-d H:i:s') : null;
+            $endDateStr = $endDate ? $endDate->format('Y-m-d H:i:s') : null;
+
+            $stmt->bindParam(':start_date', $startDateStr);
+            $stmt->bindParam(':end_date', $endDateStr);
+            $stmt->bindParam(':status', $status);
+            $stmt->bindParam(':created_by', $createdBy);
+            $result = $stmt->execute();
+            if ($result && $stmt->rowCount() > 0) {
+        
+                if ($videoId) {
+                    $updateStmt = self::$pdo->prepare("UPDATE videos SET event_id = :event_id , updated_by = :updated_by WHERE id = :video_id");
+                    $updateStmt->bindParam(':event_id', $id);
+                    $updateStmt->bindParam(':video_id', $videoId);
+                    $updateStmt->bindParam(':updated_by', $updatedBy);
+                    $updateStmt->execute();
+                }
+                return [
+                    'status' => 'success',
+                    'message' => 'Event created',
+                    'event_id' => $id
+                ];
+            } else {
+                return [
+                    'status' => 'error',
+                    'message' => 'Event could not be saved.'
+                ];
+            }
+        } catch (\PDOException $e) {
+            return [
+                'status' => 'error',
+                'message' => 'Database error: ' . $e->getMessage()
+            ];
+        } catch (\Exception $e) {
+            return [
+                'status' => 'error',
+                'message' => 'Server error: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    public function getById($id) {
+        try {
+            $stmt = self::$pdo->prepare("SELECT * FROM events WHERE id = :id");
+            $stmt->bindParam(':id', $id);
+            $stmt->execute();
+            $event = $stmt->fetch(\PDO::FETCH_ASSOC);
+            if (!$event) {
+                http_response_code(404);
+                return ['status' => 'error', 'message' => 'Event not found', 'data' => null];
+            }
+            http_response_code(200);
+            return ['status' => 'success', 'message' => 'Event retrieved', 'data' => $event];
+        } catch (\Exception $e) {
+            http_response_code(500);
+            return ['status' => 'error', 'message' => 'Server error: ' . $e->getMessage(), 'data' => null];
+        }
+    }
+
+    public function update($id, $data, $adminId) {
+        try {
+            // Check if event is not cancelled before allowing updates
+            $checkStmt = self::$pdo->prepare("SELECT status FROM events WHERE id = :id");
+            $checkStmt->bindParam(':id', $id);
+            $checkStmt->execute();
+            $event = $checkStmt->fetch(\PDO::FETCH_ASSOC);
+            if (!$event) {
+                http_response_code(404);
+                return ['status' => 'error', 'message' => 'Event not found.', 'data' => null];
+            }
+            if ($event['status'] === EventStatus::CANCELLED->value) {
+                http_response_code(400);
+                return ['status' => 'error', 'message' => 'Cannot update a cancelled event.', 'data' => null];
+            }
+            $fields = [];
+            $params = [':id' => $id];
+            if (isset($data['name'])) {
+                $fields[] = 'name = :name';
+                $params[':name'] = $data['name'];
+            }
+            if (isset($data['description'])) {
+                $fields[] = 'description = :description';
+                $params[':description'] = $data['description'];
+            }
+            if (isset($data['status']) && EventStatus::isValid($data['status'])) {
+                $fields[] = 'status = :status';
+                $params[':status'] = $data['status'];
+            }
+
+            // Always update the updated_by and updated_at fields
+            $fields[] = 'updated_by = :updated_by';
+            $fields[] = 'updated_at = NOW()';
+            $params[':updated_by'] = $adminId;  // Admin is updating the event
+
+            if (empty($fields)) {
+                http_response_code(400);
+                return ['status' => 'error', 'message' => 'No valid fields to update.', 'data' => null];
+            }
+            $sql = "UPDATE events SET ".implode(', ', $fields)." WHERE id = :id";
+            $stmt = self::$pdo->prepare($sql);
+            foreach ($params as $key => $value) {
+                $stmt->bindValue($key, $value);
+            }
+            $stmt->execute();
+            if ($stmt->rowCount() === 0) {
+                http_response_code(404);
+                return ['status' => 'error', 'message' => 'Event not found or no changes made.', 'data' => null];
+            }
+            http_response_code(200);
+            return ['status' => 'success', 'message' => 'Event updated', 'data' => null];
+        } catch (\Exception $e) {
+            http_response_code(500);
+            return ['status' => 'error', 'message' => 'Server error: ' . $e->getMessage(), 'data' => null];
+        }
+    }
+
+    public function delete($id, $adminId) {
+        try {
+            $status = EventStatus::CANCELLED->value;
+            $stmt = self::$pdo->prepare("UPDATE events SET status = :status, updated_by = :updated_by, updated_at = NOW() WHERE id = :id");
+            $stmt->bindParam(':status', $status);
+            $stmt->bindParam(':id', $id);
+            $stmt->bindParam(':updated_by', $adminId);
+            $stmt->execute();
+            if ($stmt->rowCount() === 0) {
+                http_response_code(404);
+                return ['status' => 'error', 'message' => 'Event not found.', 'data' => null];
+            }
+            http_response_code(200);
+            return ['status' => 'success', 'message' => 'Event cancelled', 'data' => null];
+        } catch (\Exception $e) {
+            http_response_code(500);
+            return ['status' => 'error', 'message' => 'Server error: ' . $e->getMessage(), 'data' => null];
+        }
+    }
+
+    public function getAll() {
+        try {
+            
+            $sql = "SELECT e.*, 
+                          v.id as video_id, 
+                          v.title as video_title, 
+                          v.file_path as video_url, 
+                          v.thumbnail_path as video_thumbnail,
+                          v.duration as video_duration
+                   FROM events e 
+                   LEFT JOIN videos v ON e.id = v.event_id 
+                   ORDER BY e.created_at DESC";
+            $stmt = self::$pdo->prepare($sql);
+            $stmt->execute();
+            $events = [];
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $eventId = $row['id'];
+                if (!isset($events[$eventId])) {
+                    $events[$eventId] = [
+                        'id' => $row['id'],
+                        'name' => $row['name'],
+                        'description' => $row['description'],
+                        'start_date' => $row['start_date'],
+                        'end_date' => $row['end_date'],
+                        'status' => $row['status'],
+                        'created_at' => $row['created_at'],
+                        'created_by' => $row['created_by'],
+                        'updated_at' => $row['updated_at'],
+                        'updated_by' => $row['updated_by'],
+                        'video' => null
+                    ];
+                }
+                if ($row['video_id']) {
+                    $events[$eventId]['video'] = [
+                        'id' => $row['video_id'],
+                        'title' => $row['video_title'],
+                        'url' => $row['video_url'],
+                        'thumbnail' => $row['video_thumbnail'],
+                        'duration' => $row['video_duration']
+                    ];
+                }
+            }
+            http_response_code(200);
+            return ['status' => 'success', 'message' => 'Events retrieved', 'data' => array_values($events)];
+        } catch (\Exception $e) {
+            http_response_code(500);
+            return ['status' => 'error', 'message' => 'Server error: ' . $e->getMessage(), 'data' => null];
+        }
+    }
+} 
